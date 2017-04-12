@@ -1,0 +1,311 @@
+---
+title: "Market Basket Full of Books"
+author: "Connor McCambridge"
+date: "4/5/2017"
+output: html_document
+---
+
+![](http://blog.oxforddictionaries.com/wp-content/uploads/Book-Quiz.jpg)
+
+```{r dataset load and format, include=FALSE}
+options(scipen=999)
+library(Matrix)
+library(arules) 
+book <- read.transactions("~/Documents/BIA 6301 Data Mining/Module 4/Homework/bookdata.tsv.gz", format="single", sep="\t", cols=c("userid", "title"), rm.duplicates=T)
+basketsizes<-size(book)
+sum(basketsizes)
+```
+
+#Introduction
+
+In order to better prepare for the Summer season, the manager of the Flourish and Blotts Bookstore wanted to gain insights from historical sales transactions. Specifically, he wants to learn what have been the best-selling book, which books should be displayed to appeal to book club audience especially for someone who is reading titles from Oprah's Book Club, and which other books should be included in display cases. 
+
+The dataset that was provided for analysis encompassed a large history of past sales for the store. After duplicates were removed from provided data, there were 92,108 different transactions, which included 220,447 different books, that was made available for this analysis. The transactions also included a wide number range of books bought, with 51,286 transactions only involving one book, all the way to one transaction involving 10,253 books. And overall 1,022,315 individual books were sold throughout the entire dataset. 
+
+It is worth noting that it was advised that Wild Animus is not a typical book with typical sales, so it was not included in any of the results going forward.
+
+```{r summary of data, include=FALSE}
+summary(book)
+```
+
+#Top Selling Books
+
+####Analysis
+
+For the bookstore, I decide to find the top 25 selling book to consider their best selling books at the store. To get a quick idea of books which have the best sales historically, a simple frequency plot is formed with the top 30 books being charted and the results being examined. Here is that plot generated:
+
+```{r frequency plot, echo=FALSE}
+itemFrequencyPlot(book, topN = 30 )
+```
+
+Though the graph does give the necessary 25 top selling books that are being looked for, it is worth finding the frequency at which of the best-selling books and what the exact number of the sales of those books are for further analysis. To do this the item frequency of books sold is generated through a function, formed into a data frame. With the frequency of each book sold, that number is taken over the sum of all frequencies and then by multiply that by the total number of books sold the count of each book sold was found. The data frame was then sorted and the top 25 results were returned for the bookstore best-seller list.
+
+####Results
+
+Here are the results for the 25 best selling books in the bookstore from historical records:
+
+```{r top sales df, echo=FALSE}
+basketsizes<-size(book) 
+bookfreq<-itemFrequency(book)
+bookfreq_df<-as.data.frame(bookfreq)
+bookfreq_df$count <- (bookfreq/sum(bookfreq))*sum(basketsizes)
+bookfreg_dforder<-as.data.frame(bookfreq_df[order(bookfreq_df[,2],decreasing=TRUE),],)
+bookfreg_dforder <- bookfreg_dforder[-c(1), ]
+colnames(bookfreg_dforder) <- c("Frequency", "Count")
+head(bookfreg_dforder, 25)
+```
+
+Even in the top 25 books, there is a big difference between the first and the last book on the list, with The Lovely Bones selling over 2 times the number of books than Harry Potter and the Chamber of Secrets. But with over a million books have been sold, accounts for the for lower than typical frequency of individual books being sold, even in the top sellers.
+
+#Book Club Display
+
+####Analysis
+
+Oprah's book club is one of the most well known and established book clubs, with titles selling millions after being recommended by the talk show star. Looking for books to be displayed with those in hopes of increasing sales can be a very beneficial marketing strategy. To determine which books should be displayed as book club recommended, frequent pattern analysis was used by examining historical market baskets for books that were bought along with books belonging to Oprah's Book Club. I was looking to come up with approximately 10 books to recommend for the display. 
+
+To do this, transactions with more than one book purchased was separated into a new dataset for this analysis. Once the dataset is ready, criteria for the rules of frequent pattern analysis can begin to be formulated. The first step was to exclude Wild Animus from the search and then to build in the books from the book club to search for books that were bought along with them. From the 77 different books in Oprah's Book Club, 55 of them were found in the existing the historical data from the store. Because the dataset has so many transactions, the level of support for rules happening in existing transactions going to be lower than usual, I set the support level at .05% meaning the rules had to at least take place in that percent of transactions. To be sure though that books were likely to purchased together, I set the level of confidence in the how often they were correct high at being correct 80% of the time.
+
+
+```{r, include=FALSE}
+bookbasket<-book[basketsizes>1]
+summary(bookfreg_dforder)
+```
+
+####Results
+
+```{r summary, include=FALSE}
+oprahrules<-apriori(bookbasket, parameter=list(supp=0.0005,conf = 0.8,minlen=2), appearance = list(none = c("Wild Animus"),lhs = 
+                                c("Stones From the River",
+                                  "The Poisonwood Bible: A Novel",
+                                  "Midwives: A Novel",
+                                  "Here On Earth",
+                                  "Songs in Ordinary Time",
+                                  "The Deep End of the Ocean",
+                                  "Song of Solomon",
+                                  "The Book of Ruth",
+                                  "She's Come Undone",
+                                  "The Rapture of Canaan",
+                                  "The Heart of a Woman",
+                                  "A Lesson Before Dying",
+                                  "A Virtuous Woman",
+                                  "Ellen Foster",
+                                  "The Treasure Hunt",
+                                  "The Best Way to Play",
+                                  "Paradise",
+                                  "Black and Blue",
+                                  "Breath, Eyes, Memory",
+                                  "I Know This Much Is True",
+                                  "Midwives",
+                                  "Jewel",
+                                  "The Reader",
+                                  "The Pilot's Wife : A Novel",
+                                  "Mother of Pearl",
+                                  "Tara Road",
+                                  "River, Cross My Heart",
+                                  "Vinegar Hill",
+                                  "A Map of the World",
+                                  "Gap Creek",
+                                  "Daughter of Fortune",
+                                  "Back Roads",
+                                  "The Bluest Eye",
+                                  "While I Was Gone",
+                                  "The Poisonwood Bible",
+                                  "Open House",
+                                  "Drowning Ruth",
+                                  "We Were the Mulvaneys",
+                                  "Icy Sparks",
+                                  "Stolen Lives: Twenty Years in a Desert Jail",
+                                  "Cane River",
+                                  "The Corrections",
+                                  "A Fine Balance",
+                                  "A Tale of Two Cities",
+                                  "Great Expectations",
+                                  "The Pillars of the Earth",
+                                  "As I Lay Dying",
+                                  "A Million Little Pieces",
+                                  "Night",
+                                  "Middlesex",
+                                  "Love in the Time of Cholera",
+                                  "White Oleander : A Novel",
+                                  "Where The Heart Is",
+                                  "House of Sand and Fog",
+                                  "East of Eden"), default="rhs"), control = list(verbose=T))
+oprahrules<-sort(oprahrules, decreasing=TRUE,by=c("lift","confidence"))
+
+```
+
+With the criteria listed 1,622 different rules were returned, but of those rules only 10 books were the results of those rules. The best way to view these results is in the form of grouped plot. In the plot, the k-mean cluster is used to group together rules, and results are displayed in order of how much more likely an item is to be purchased given that you know another item has been purchased, or lift as it is called. In the plot the deeper the red the more lift the book recommended has and the bigger the circle the great the support for the rule occurring in the transactions. 
+
+The LHS Group is the left-hand side of the rule meaning these were the books previously identified for being a part of Oprah's Book Club and the RHS Group is right-hand side of the rule meaning the book that is also likely to be purchased. Here are the results:
+
+```{r, echo=FALSE}
+library(arulesViz)
+plot(oprahrules, method="grouped", control=list(k=30)) 
+```
+
+```{r summary oprah rule, include=FALSE}
+summary(oprahrules)
+```
+
+Here is the List of the 10 recommended books for the people who read books selected for Oprah's Book Club:
+
+Good in Bed
+Summer Sisters
+The Girls' Guide to Hunting and Fishing
+Snow Falling on Cedars
+The Red Tent
+Divine Secrets of the Ya-Ya Sisterhood: A Novel
+The Secret Life of Bees
+Bridget Jones's Diary
+The Nanny Diaries: A Novel
+The Lovely Bones: A Novel
+
+Some of the books included on this list also included on the best seller list, the way the two separate questions were asked, it seemed like the best sellers were not going to be used directly for a display. Because of this, the books were still recommended. The display featured with well-selling books may help sell some of the other books presented and draw more attention to the display in general. 
+
+In looking at the rules found, when the proper market basket of books in order, the books recommended are 29 to 80 time more likely to be purchased along with them.
+
+#Other Display Recommendation
+
+To find other books that should be included in a display, frequent pattern analysis was used again on historical transactions. The books I want to recommend for the display will compliment the stores best sellers list. In doing it this way you could display the books by with best sellers to recommend for further read or by themselves as other popular book titles. With these new recommendations, I didn't want any books that are in a known series, from well-known genre writers (such as John Grisham or Nicholas Sparks), included in Oprah's Book Club, or the recommendations that have been made for the previous display. This is so a completely unique and independent display can be created, and not take away from other likely used displays. Again I was looking to come up with approximately 10 books to recommend for the display.
+
+The data set without single book purchase transactions was used again for analysis. For the criteria of these rules first all Wild Animus, all of Oprah's Book Club Books, and the book recommended were omitted from the formula. Then the top 25 best sellers from the store added to be the books to search for books that were bought along with them. Since the level of support for rules happening in existing transactions is lower than usual, the support level was first set at .05%. The level of confidence in the how often they were correct, was set high again at 80% of the time.
+
+With these rules, a lot of fine tuning need to be done because so many books were omitted, and more were omitted as the results turned up, the support level was brought down to create more rules to find different rules featuring different books in the market basket. When 10 books for display recommendations were found, the level of support had been decreased to .045% overall.
+
+####Results
+
+```{r, include=FALSE}
+newrules<-apriori(bookbasket, parameter=list(supp=0.00045,conf = 0.75,minlen=2), appearance = list(none = 
+                                c("Wild Animus",
+                                  "Stones From the River",
+                                  "The Poisonwood Bible: A Novel",
+                                  "Midwives: A Novel",
+                                  "Here On Earth",
+                                  "Songs in Ordinary Time",
+                                  "The Deep End of the Ocean",
+                                  "Song of Solomon",
+                                  "The Book of Ruth",
+                                  "The Rapture of Canaan",
+                                  "The Heart of a Woman",
+                                  "A Lesson Before Dying",
+                                  "A Virtuous Woman",
+                                  "Ellen Foster",
+                                  "The Treasure Hunt",
+                                  "The Best Way to Play",
+                                  "Paradise",
+                                  "Black and Blue",
+                                  "Breath, Eyes, Memory",
+                                  "I Know This Much Is True",
+                                  "Midwives",
+                                  "Jewel",
+                                  "The Reader",
+                                  "Mother of Pearl",
+                                  "Tara Road",
+                                  "River, Cross My Heart",
+                                  "Vinegar Hill",
+                                  "A Map of the World",
+                                  "Gap Creek",
+                                  "Daughter of Fortune",
+                                  "Back Roads",
+                                  "The Bluest Eye",
+                                  "While I Was Gone",
+                                  "The Poisonwood Bible",
+                                  "Open House",
+                                  "Drowning Ruth",
+                                  "We Were the Mulvaneys",
+                                  "Icy Sparks",
+                                  "Stolen Lives: Twenty Years in a Desert Jail",
+                                  "Cane River",
+                                  "The Corrections",
+                                  "A Fine Balance",
+                                  "A Tale of Two Cities",
+                                  "Great Expectations",
+                                  "The Pillars of the Earth",
+                                  "As I Lay Dying",
+                                  "A Million Little Pieces",
+                                  "Night",
+                                  "Middlesex",
+                                  "Love in the Time of Cholera",
+                                  "East of Eden",
+                                  "Good in Bed",
+                                  "The Girls' Guide to Hunting and Fishing",
+                                  "Summer Sisters",
+                                  "The Chamber",
+                                  "The Client",
+                                  "The Rainmaker",
+                                  "The Street Lawyer",
+                                  "The Brethren",
+                                  "The Firm",
+                                  "A Time to Kill",
+                                  "Harry Potter and the Goblet of Fire",
+                                  "The Partner",
+                                  "Harry Potter and the Prisoner of Azkaban",
+                                  "The Runaway Jury",
+                                  "A Bend in the Road",
+                                  "Message in a Bottle",
+                                  "Hannibal",
+                                  "A Walk to Remember",
+                                  "Little Altars Everywhere: A Novel",
+                                  "Confessions of a Shopaholic"
+), lhs = 
+                                c("The Lovely Bones: A Novel",
+                                  "She's Come Undone",
+                                  "The Da Vinci Code",
+                                  "Harry Potter and the Sorcerer's Stone",
+                                  "The Nanny Diaries: A Novel",
+                                  "A Painted House",
+                                  "Bridget Jones's Diary",
+                                  "The Secret Life of Bees",
+                                  "Divine Secrets of the Ya-Ya Sisterhood: A Novel",
+                                  "The Red Tent",
+                                  "White Oleander : A Novel",
+                                  "Angels &amp; Demons",
+                                  "Snow Falling on Cedars",
+                                  "Life of Pi",
+                                  "The Summons",
+                                  "Girl with a Pearl Earring",
+                                  "Where The Heart Is",
+                                  "The Notebook",
+                                  "The Testament",
+                                  "Angela's Ashes",
+                                  "House of Sand and Fog",
+                                  "The Joy Luck Club",
+                                  "The Pelican Brief",
+                                  "The Pilot's Wife : A Novel",
+                                  "Harry Potter and the Chamber of Secrets"
+), default="rhs"), control = list(verbose=T))
+newrules<-sort(newrules, decreasing=TRUE,by=c("lift","confidence"))
+```
+
+With the criteria listed only 79 rules were returned, and with those rules, only 10 books were the recommended as the result. The best way to view these results is in the form of grouped plot. These rules were also grouped together using k-mean cluster analysis and plotted together to show the results. The results are still listed by lift, and in the plot the deeper the red the more lift the book recommended has and the bigger the circle the great the support for the rule occurring in the transactions.
+
+The LHS Group is the left-hand side of the rule meaning these were the books previously identified for being one of the top 25 selling books and the RHS Group is right-hand side of the rule meaning the book that is also likely to be purchased. Here are the results:
+
+```{r,echo=False}
+plot(newrules, method="grouped", control=list(k=30))
+```
+
+```{r summary other rules, include=FALSE}
+summary(newrules) 
+```
+
+Here is the List of the 10 recommended books for another display for the store, based on the 25 best selling books:
+
+Turtle Moon
+Show Waltz in Cedar Bend
+The Kitchen God's Wife
+Fried Green Tomatoes at the Whistler Stop Cafe
+Into Thin Air: A Personal Account of the Mt. Everest Disaster
+The Bonesetter's Daughter
+The Perfect Storm: A True Story of Men Against the Sea
+The Bridges of Madison County
+The Horse Whisperer
+To Kill a Mockingbird
+
+Even though a lot of books had to excluded from the formula, I was pleased that a completely different display, with books not used elsewhere, was able to be created. According to these new rules, when the proper market basket of books is bought, these identified books are 66 to 235 time more likely to be bought along with them. The books recommended seems to be for the most part well-known books but may have lost some of their popularity over the years. Bringing them forward and displaying them together may be great reminders for people who have always wanted to read them but have not had the chance yet.
+
+
+#Conclusion
+
+With the recommendations for people who enjoy Oprah's Book Club, recommendations for the new display, and the determining the store's best sellers list, I feel like a lot of different insights have been gained from the use of historical data and frequent pattern analysis. With this information I feel like Flourish and Blotts will be ready to face the upcoming Summer season of reading.
+
